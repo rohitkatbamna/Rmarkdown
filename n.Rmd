@@ -1,0 +1,109 @@
+---
+title: "Course Project"
+output: html_document
+---
+Frist loading the data and completing the case impling removing NAs also
+I download the data on my computer and extracted it and then read it here
+Also changing the data of character to date format.
+
+```{r echo=TRUE}
+g<-read.csv("F:\\repdata_data_activity\\activity.csv")
+cc<-complete.cases(g)
+cd<-g[cc,]
+cd$date<-as.Date(cd$date,format = "%Y-%m-%d")
+head(cd)
+```
+
+Loading the Dplyr library just in case it is needed
+second I calculated steps for each date
+and then plotted the histogram
+
+```{r echo=TRUE}
+library(dplyr)
+spd <- aggregate(cd$steps, list(cd$date), FUN=sum)
+hist(spd$x,breaks=10,xlab = "Total number of steps taken everyday",main = "Histogram of steps")
+```
+
+
+Now finding the mean and median
+
+```{r echo=TRUE}
+mean(spd$x)
+median(spd$x)
+```
+
+Making a time series plot of the 5-minute interval
+For that I aggregated steps with interval from the data also remember the data is 
+complete here
+
+```{r echo=TRUE}
+spt<-aggregate(cd$steps~cd$interval,data=cd,FUN=mean)
+spt$`cd$interval`<-spt$`cd$interval`/100
+plot(spt$`cd$interval`,spt$`cd$steps`,type = "l",main = "Average steps Per time interval",xlab = "Time", ylab = "Steps")
+```
+
+On average across all the days in the dataset, finding time the maximum number of steps
+
+```{r echo=TRUE}
+ms <- tbl_df(spt)
+ms %>% select(`cd$steps`,`cd$interval`) %>% filter(`cd$steps` == max(ms$`cd$steps`))
+```
+
+Now finding all the missing values in the dataset by taking the complete case 
+value and summing it 
+
+```{r echo=TRUE}
+mv<-sum(!cc)
+print(mv)
+```
+
+First changing the data from character to date in original data that I loaded in
+g variable I took the mean and replaced the NAs from it as shown in code
+and then I made a new dataframe from the newly generated data then I plotted 
+the histogram via the same aggregate function as shown
+ 
+```{r echo=TRUE}
+g$date<-as.Date(g$date,format = "%Y-%m-%d")
+as<-round(mean(spt$`cd$steps`),0) 
+g$ns<- ifelse(is.na(g$steps), as , g$steps)
+ndf<-data.frame(steps = g$ns,date = g$date, interval = g$interval)
+nspd<- aggregate(ndf$steps, list(ndf$date), FUN=sum)
+hist(nspd$x,breaks=10,xlab = "Total number of steps taken everyday",main = "Histogram of steps")
+```
+
+Now finding mean and median with new data
+
+```{r echo=TRUE}
+nme<-mean(nspd$x)
+nmed<-median(nspd$x)
+```
+
+Now forming new column weekday and daytype
+daytype can be weekend or weekday
+
+```{r echo=TRUE}
+ndf$weekday<-weekdays(ndf$date)
+ndf$daytype<-ifelse(ndf$weekday=='Saturday' | ndf$weekday=='Sunday', 'weekend','weekday')
+head(ndf)
+```
+
+now aggregated the new data via daytype and plotting the data
+two sets of data is made here
+
+```{r echo=TRUE}
+nspt<-aggregate(steps~interval+daytype,data=ndf,FUN = mean)
+weekd<-filter(nspt,daytype == "weekday")
+weeke<-filter(nspt,daytype == "weekend")
+```
+
+The first plot is weekday
+
+```{r echo=TRUE}
+plot(weekd$interval,weekd$steps,type="l")
+```
+
+The second plot is weekend
+
+```{r echo=TRUE}
+plot(weeke$interval,weeke$steps,type="l")
+```
